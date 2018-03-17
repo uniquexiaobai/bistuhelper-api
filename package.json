@@ -1,0 +1,26 @@
+{
+  "name": "bistu-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@gitlab.com/uniquexiaobai/bistu-api.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://gitlab.com/uniquexiaobai/bistu-api/issues"
+  },
+  "homepage": "https://gitlab.com/uniquexiaobai/bistu-api#README",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.2",
+    "cors": "^2.8.4",
+    "express": "^4.16.3",
+    "request": "^2.85.0"
+  }
+}
