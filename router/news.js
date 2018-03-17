@@ -143,7 +143,7 @@ const fetchNewsList = async (listUrl, type) => {
 				desc: $newsDesc.text().trim(),
 			};
 
-			news.cover = cover ? resolvedUrl(`${baseUrl}/${news.type}/`, cover) : '';
+			news.cover = cover ? resolvedUrl(`${baseUrl}/${type}/`, cover) : '';
 			list$.push(news);
 		}
 		return list$;
