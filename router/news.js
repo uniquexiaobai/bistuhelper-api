@@ -1,5 +1,6 @@
 const path = require('path');
 const url = require('url');
+const axios = require('axios');
 const request = require('request');
 const cheerio = require('cheerio');
 const express = require('express');
@@ -94,24 +95,22 @@ const dirname = (url) => {
 };
 
 const fetch = async (url) => {
-	return new Promise((resolve, reject) => {
-		request(url, (err, response, body) => {
-			if (err || response.statusCode !== 200) {
-				return reject(new Error(err));
-			}
-			return resolve(body);
-		});
-	});
+    try {
+        const {data} = await axios.get(url);
+        return data;
+    } catch (err) {
+        return new Error(err);
+    }
 };
 
 const fetchNewsList = async (listUrl, type) => {
 	try {
-		const body = await fetch(listUrl);
+        const body = await fetch(listUrl);
 		const $ = cheerio.load(body);
 		const list$ = [];
 
 		const $banner = $('#myCarousel > .carousel-inner');
-		const bannerImgSrc = $banner.find('img').attr('src'); 
+        const bannerImgSrc = $banner.find('img').attr('src'); 
 		if (bannerImgSrc) {
 			const $bannerTitle = $banner.find('.carousel-caption h4');
 			const $bannerDesc = $bannerTitle.next('p');
