@@ -1,7 +1,6 @@
 const path = require('path');
 const url = require('url');
 const axios = require('axios');
-const request = require('request');
 const cheerio = require('cheerio');
 const express = require('express');
 const router = express.Router();
