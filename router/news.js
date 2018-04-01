@@ -7,7 +7,7 @@ const router = express.Router();
 
 const baseUrl = 'http://news.bistu.edu.cn';
 
-router.get('/news/hot', (req, res, next) => {
+router.get('/hot', (req, res, next) => {
   getHotNewsPromise(baseUrl)
 		.then((hotNews) => {
 			res.json(hotNews);
@@ -17,7 +17,7 @@ router.get('/news/hot', (req, res, next) => {
 });
 
 // ?type={}&page={}
-router.get('/news', (req, res, next) => {
+router.get('/', (req, res, next) => {
 	let {page = '1', type = 'zhxw'} = req.query;
 	let listUrl = `${baseUrl}/${type}/`;
 
@@ -34,7 +34,7 @@ router.get('/news', (req, res, next) => {
 		});
 });
 
-router.get('/news/:id', (req, res, next) => {
+router.get('/:id', (req, res, next) => {
 	const id = req.params.id.split('$').join('/');
 	const detailUrl = `${baseUrl}/${id}.html`;
 

@@ -1,9 +1,12 @@
-var express = require('express');
-var cors = require('cors');
-var router = require('./router');
-var app = express();
+const express = require('express');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const router = require('./router');
+const app = express();
 
+app.use(bodyParser.urlencoded({extended: false}));
 app.use(cors());
+
 router(app);
 
 app.use((req, res, next) => {
