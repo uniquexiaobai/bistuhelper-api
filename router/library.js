@@ -19,6 +19,7 @@ router.post('/borrow', (req, res, next) => {
 const getBorrowInfo = async (auth) => {
     let user, books;
     const browser = await puppeteer.launch({
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
         headless: true,
         timeout: 0
     });
