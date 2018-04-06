@@ -4,10 +4,7 @@ const router = express.Router();
 
 router.post('/borrow', (req, res, next) => {
     const {username, password} = req.body;
-    const auth = {
-        username,
-        password,
-    };
+    const auth = {username, password};
 
     getBorrowInfo(auth).then((data) => {
         res.json(data);
@@ -37,14 +34,17 @@ const getBorrowInfo = async (auth) => {
     await page.waitForSelector('.boxBd');
 
     books = await page.evaluate(el => {
-        const $list = Array.from(document.querySelectorAll(el));
+        const $$ = (el, $target) => ($target || document).querySelectorAll(el);
+        const text = ($el) => $el.textContent.trim();
+
+        const $list = [...$$(el)];
         return $list.map(($item) => {
             const name = $item.querySelector('.sheetHd').textContent.trim();
-            const $infos = $item.querySelectorAll('.sheet > table:nth-child(2) tr > td');
-            const barCode = $infos[0].textContent.trim();
-            const fromDate = $infos[1].textContent.trim();
-            const toDate = $infos[2].textContent.trim();
-            const address = $infos[3].textContent.trim();
+            const $infos = $$('.sheet > table:nth-child(2) tr > td', $item);
+            const barCode = text($infos[0]);
+            const fromDate = text($infos[1]);
+            const toDate = text($infos[2]);
+            const address = text($infos[3]);
 
             return {name, barCode, fromDate, toDate, address};
         });
@@ -52,8 +52,10 @@ const getBorrowInfo = async (auth) => {
 
     await page.goto('http://mc.m.5read.com/irdUser/edit/showEditUser.jspx', {waitUntil: 'domcontentloaded'});
     user = await page.evaluate(() => {
-        const name = document.getElementById('displayname').value;
-        const department = document.getElementById('department').value;
+        const value = (el) => document.querySelector(el).value.trim();
+
+        const name = value('#displayname');
+        const department = value('#department');
 
         return {name, department};
     });
