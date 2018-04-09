@@ -32,6 +32,20 @@ router.post('/score', (req, res, next) => {
         });
 });
 
+router.post('/course', (req, res, next) => {
+    const {username, password, year, term} = req.body;
+    const auth = {username, password};
+    const query = {year, term};
+
+    getCourseInfo(auth, query)
+        .then(courseInfo => {
+            res.json(courseInfo);
+        })
+        .catch(err => {
+            next(err);
+        });
+});
+
 const pageInit = async (auth) => {
     const browser = await puppeteer.launch({
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
@@ -132,6 +146,104 @@ const getScoreInfo = async (auth, query) => {
 
     await browser.close();
     return scoreInfo;
+}
+
+const getCourseInfo = async (auth, query) => {
+    const browser = await pageInit(auth);
+    const pages = await browser.pages();
+    const page = pages.pop();
+
+    const url = await page.evaluate(el => {
+        return document.querySelector(el).href;
+    }, '.nav > li:nth-child(6) > .sub li:nth-child(3) > a')
+    await page.goto(url, {waitUntil: 'domcontentloaded'});
+
+    await page.evaluate((year, term) => {
+        const $ = (el) => document.querySelector(el);
+
+        $('#xnd').value = year;
+        $('#xqd').value = term;
+        __doPostBack('xnd', '');
+        __doPostBack('xqd', '');
+    }, query.year, query.term);
+    await page.waitForNavigation({waitUntil: 'domcontentloaded'})
+
+    const courseInfo = await page.evaluate(() => {
+        const $ = el => document.querySelector(el);
+        const $$ = el => document.querySelectorAll(el);
+
+        function getCells() {
+            var rows = [...$('#Table1').rows].slice(2);
+            var list = [];
+        
+            var a = 0, b = 0;
+            for (var i = 0; i < rows.length; i++) {
+                var cells = rows[i].cells;
+        
+                if (i === 0 || i === 5 || i === 9) {
+                    cells = [...cells].slice(2);
+                } else {
+                    cells = [...cells].slice(1);
+                }
+        
+                var c = 0, d = 0;
+                for (var j = 0; j < cells.length; j++) {
+                    if (!/\n/.test(cells[j].innerText)) continue;
+                    var rowspan = cells[j].getAttribute('rowspan');
+                    var week = j + a + b;
+                    var parts;
+                    if (rowspan === '3') {
+                        c ++;
+                        d ++;
+                        parts = [i, i + 2];
+                    } else if (rowspan === '2') {
+                        d ++;
+                        parts = [i, i + 1];
+                    } else {
+                        parts = [i, i];
+                    }
+                    list.push({text: cells[j].innerText, pos: [week, parts]});
+                }
+                a = c;
+                b = d;
+            }
+            return list;
+        }
+        const cells = getCells();
+        const list = [...cells].reduce((arr, cell) => {
+            const text = cell.text;
+            const obj = {};
+
+            if (/\n\n/.test(text)) {
+                return arr.concat(text.split('\n\n').map(v => ({text: v, pos: cell.pos})));
+            }
+            return [...arr, cell];
+        }, []);
+        
+        const getMeta = (text, pos) => {
+            const matchs = text.match(/{第(\d+-\d+)周.*}/);
+            
+            return {
+                week: pos[0],
+                parts: pos[1],
+                range: matchs[1].split('-'),
+            };
+        };
+        const result = list.map(({text, pos}) => {
+            const infos = text.split('\n');
+            const name = infos[0];
+            const type = infos[1];
+            const meta = getMeta(infos[2], pos);
+            const teacher = infos[3];
+            const address = infos[4];
+
+            return {name, type, meta, teacher, address};
+        });
+
+        return result;
+    });
+
+    return courseInfo;
 }
 
 module.exports = router;
