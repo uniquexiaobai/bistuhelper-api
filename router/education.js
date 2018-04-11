@@ -19,11 +19,10 @@ router.post('/base', (req, res, next) => {
 });
 
 router.post('/score', (req, res, next) => {
-    const {username, password, year, term} = req.body;
+    const {username, password} = req.body;
     const auth = {username, password};
-    const query = {year, term};
 
-    getScoreInfo(auth, query)
+    getScoreInfo(auth)
         .then(scoreInfo => {
             res.json(scoreInfo);
         })
@@ -115,7 +114,7 @@ const getBaseInfo = async (auth) => {
     return baseInfo;
 };
 
-const getScoreInfo = async (auth, query) => {
+const getScoreInfo = async (auth) => {
     const browser = await pageInit(auth);
     const pages = await browser.pages();
     const page = pages.pop();
@@ -125,14 +124,8 @@ const getScoreInfo = async (auth, query) => {
     }, '.nav > li:nth-child(6) > .sub li:nth-child(10) > a')
     await page.goto(url, {waitUntil: 'domcontentloaded'});
 
-    await page.evaluate((year, team) => {
-        const $ = (el) => document.querySelector(el);
-        
-        $('#ddlXN').value = year;
-        $('#ddlXQ').value = team;
-    }, query.year, query.term);
-    await page.click('input[id=Button1]');
-    await page.waitForSelector('form');
+    await page.click('input[id=Button2]');
+    await page.waitForNavigation({waitUntil: 'domcontentloaded'});
 
     const scoreInfo = await page.evaluate(() => {
         const $ = (el) => document.querySelector(el);
@@ -145,12 +138,14 @@ const getScoreInfo = async (auth, query) => {
             const children = $item.children;
 
             return {
-                courseID: text(children[2]),
-                name: text(children[3]),
-                type: text(children[4]),
-                credit: text(children[6]),
-                point: text(children[7]),
-                score: text(children[12]),
+                year: text(children[0]),       // 学年
+                term: text(children[1]),       // 学期
+                courseID: text(children[2]),   // 课程代码
+                name: text(children[3]),       // 课程名称
+                type: text(children[4]),       // 课程性质
+                credit: text(children[6]),     // 学分
+                point: text(children[7]),      // 绩点
+                score: text(children[12]),     // 成绩
             };
         });
 
