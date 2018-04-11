@@ -46,6 +46,19 @@ router.post('/course', (req, res, next) => {
         });
 });
 
+router.post('/cet', (req, res, next) => {
+    const {username, password} = req.body;
+    const auth = {username, password};
+
+    getCetInfo(auth)
+        .then(cetInfo => {
+            res.json(cetInfo);
+        })
+        .catch(err => {
+            next(err);
+        });
+});
+
 const pageInit = async (auth) => {
     const browser = await puppeteer.launch({
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
@@ -245,5 +258,42 @@ const getCourseInfo = async (auth, query) => {
 
     return courseInfo;
 }
+
+const getCetInfo = async (auth) => {
+    const browser = await pageInit(auth);
+    const pages = await browser.pages();
+    const page = pages.pop();
+
+    const url = await page.evaluate(el => {
+        return document.querySelector(el).href;
+    }, '.nav > li:nth-child(3) > .sub li:nth-child(1) > a')
+    await page.goto(url, {waitUntil: 'domcontentloaded'});
+
+    const cetInfo = await page.evaluate(el => {
+        const $$ = (el, context) => (context || document).querySelectorAll(el);
+        const text = ($el) => $el.textContent.trim();
+
+        const $trs = [].slice.call($$('#DataGrid1 tr'), 1);
+        const info = $trs.map(($tr) => {
+            const $tds = $$('td', $tr);
+
+            return {
+                year: text($tds[0]),            // 学年
+                term: text($tds[1]),            // 学期
+                type: text($tds[2]),            // 等级考试名称
+                id: text($tds[3]),              // 准考证号
+                date: text($tds[4]),            // 考试日期
+                totalScore: text($tds[5]),      // 总成绩
+                listeningScore: text($tds[6]),  // 听力成绩
+                readingScore: text($tds[7]),    // 阅读成绩
+                writingScore: text($tds[8]),    // 写作成绩
+            };
+        });
+        return info;
+    });
+
+    await browser.close();
+    return cetInfo;
+};
 
 module.exports = router;
