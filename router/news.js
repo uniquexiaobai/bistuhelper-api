@@ -7,15 +7,6 @@ const router = express.Router();
 
 const baseUrl = 'http://news.bistu.edu.cn';
 
-router.get('/hot', (req, res, next) => {
-  getHotNewsPromise(baseUrl)
-		.then((hotNews) => {
-			res.json(hotNews);
-		}).catch((err) => {
-			next(err);
-		});
-});
-
 // ?type={}&page={}
 router.get('/', (req, res, next) => {
 	let {page = '1', type = 'zhxw'} = req.query;
@@ -34,6 +25,15 @@ router.get('/', (req, res, next) => {
 		});
 });
 
+router.get('/hot', (req, res, next) => {
+    fetchHotNews(baseUrl)
+		.then((hotNews) => {
+			res.json(hotNews);
+		}).catch((err) => {
+			next(err);
+		});
+});
+
 router.get('/:id', (req, res, next) => {
 	const id = req.params.id.split('$').join('/');
 	const detailUrl = `${baseUrl}/${id}.html`;
@@ -45,45 +45,6 @@ router.get('/:id', (req, res, next) => {
 			next(err);
 		});
 });
-
-/*
-function getHotNewsPromise(url) {
-	return new Promise((resolve, reject) => {
-		request(url, (err, response, body) => {
-			if (err || response.statusCode !== 200) return reject(err);
-			const data = {
-				newsList: [],
-				slideList: []
-			};
-			const $ = cheerio.load(body);
-			const newsListNode = $('.span9 > .slide').find('.item li');
-			const slideListNode = $('.span8 > .slide').find('.item');
-
-			for (let i = 0; i < newsListNode.length; i ++) {
-				const newsNode = newsListNode.eq(i);
-				const linkNode = newsNode.find('a');
-
-				data.newsList.push({ 
-					title: linkNode.text(),
-					src: resolvedUrl(baseUrl, linkNode.attr('href')), 
-					date: newsNode.contents().first().text().trim() 
-				});
-			}
-
-			for (let i = 0; i < slideListNode.length; i ++) {
-				const slideNode = slideListNode.eq(i);
-
-				data.slideList.push({
-					url: resolvedUrl(baseUrl, slideNode.find('a').attr('href')),
-					image: resolvedUrl(baseUrl, slideNode.find('img').attr('src')),
-					desc: slideNode.find('.carousel-caption > p').text()
-				});
-			}
-			resolve(data);
-		});
-	});
-}
-*/
 
 const resolvedUrl = (baseUrl, path) => {
 	return url.resolve(baseUrl, path);
@@ -101,6 +62,30 @@ const fetch = async (url) => {
         return new Error(err);
     }
 };
+
+const fetchHotNews = async (url) => {
+    try {
+        const body = await fetch(url);
+        const $ = cheerio.load(body);
+        const slide = [];
+
+        const $slide = $('#myCarousel > .carousel-inner').find('.item');
+        for (let i = 0; i < $slide.length; i ++) {
+            const $item = $slide.eq(i);
+            const itemMeta = $item.find('a').attr('href').match(/\w+/g);
+
+            itemMeta.pop();
+            slide.push({
+                id: itemMeta.join('$'),
+                title: $item.find('.carousel-caption > p').text().trim(),
+                image: resolvedUrl(baseUrl, $item.find('img').attr('src')),
+            });
+        }
+       return slide;
+    } catch (err) {
+        throw(err);
+    }
+}
 
 const fetchNewsList = async (listUrl, type) => {
 	try {
