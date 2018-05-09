@@ -17,11 +17,18 @@ app.use((req, res, next) => {
 });
 
 app.use((err, req, res, next) => {
-	res.send(err);
+	res.json({
+        code: 1,
+        message: err,
+    });
 });
 
 const port = process.env.PORT || 3000;
 
 app.listen(port, () => {
 	console.log('server is running in ' + port);
+});
+
+process.on('unhandledRejection', (reason, p) => {
+	console.log('unhandledRejection: ', p, 'reason: ', reason);
 });

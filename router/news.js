@@ -18,8 +18,11 @@ router.get('/', (req, res, next) => {
 		listUrl += 'index_' + (~~page - 1) + '.html';
 	}
 	fetchNewsList(listUrl, type)
-		.then((newsList) => {
-			res.json(newsList);
+		.then((data) => {
+			res.json({
+                code: 0,
+                data,
+            });
 		}).catch(err => {
 			next(err);
 		});
@@ -27,8 +30,11 @@ router.get('/', (req, res, next) => {
 
 router.get('/hot', (req, res, next) => {
     fetchHotNews(baseUrl)
-		.then((hotNews) => {
-			res.json(hotNews);
+		.then((data) => {
+			res.json({
+                code: 0,
+                data,
+            });
 		}).catch((err) => {
 			next(err);
 		});
@@ -39,8 +45,11 @@ router.get('/:id', (req, res, next) => {
 	const detailUrl = `${baseUrl}/${id}.html`;
 
 	fetchNewsDetail(detailUrl)
-		.then((newsDetail) => {
-			res.send(newsDetail);
+		.then((data) => {
+			res.json({
+                code: 0,
+                data,
+            });
 		}).catch((err) => {
 			next(err);
 		});
