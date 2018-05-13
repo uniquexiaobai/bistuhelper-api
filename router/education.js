@@ -195,8 +195,6 @@ const getScoreInfo = async (auth) => {
             const $$ = (el) => document.querySelectorAll(el);
             const text = ($el) => $el.textContent.trim();
 
-            const studentID = text($('#Label3')).split('：')[1];
-            const name = text($('#Label5')).split('：')[1];
             const courses = [...$$('#Datagrid1 tr:not(:first-child)')].map(($item, index) => {
                 const children = $item.children;
 
@@ -212,7 +210,7 @@ const getScoreInfo = async (auth) => {
                 };
             });
 
-            return {studentID, name, courses};
+            return courses;
         });
 
         browser.close();
