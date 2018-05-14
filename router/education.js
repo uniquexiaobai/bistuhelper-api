@@ -52,11 +52,10 @@ router.post('/score', (req, res, next) => {
 });
 
 router.post('/course', (req, res, next) => {
-    const {username, password, year, term} = req.body;
+    const {username, password} = req.body;
     const auth = {username, password};
-    const query = {year, term};
 
-    getCourseInfo(auth, query)
+    getCourseInfo(auth)
         .then(data => {
             res.json({
                 code: 0,
@@ -221,7 +220,7 @@ const getScoreInfo = async (auth) => {
     }
 }
 
-const getCourseInfo = async (auth, query) => {
+const getCourseInfo = async (auth) => {
     let browser;
 
     try {
@@ -234,6 +233,7 @@ const getCourseInfo = async (auth, query) => {
         }, '.nav > li:nth-child(6) > .sub li:nth-child(3) > a')
         await page.goto(url, {waitUntil: 'domcontentloaded'});
 
+        /* switch year & term
         await page.evaluate((year, term) => {
             const $ = (el) => document.querySelector(el);
 
@@ -243,6 +243,7 @@ const getCourseInfo = async (auth, query) => {
             __doPostBack('xqd', '');
         }, query.year, query.term);
         await page.waitForNavigation({waitUntil: 'domcontentloaded'})
+        */
 
         const courseInfo = await page.evaluate(() => {
             const $ = el => document.querySelector(el);
