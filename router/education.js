@@ -127,8 +127,8 @@ const pageInit = async (auth) => {
         }
     
         const href = await page.evaluate(el => {
-            return document.querySelector(el).href;
-        }, 'a[djsl="233645"]');
+            return document.querySelectorAll('a[djsl]')[0].href;
+        });
         await page.goto(href, {waitUntil: 'domcontentloaded'});
     
         return browser;
@@ -267,17 +267,17 @@ const getCourseInfo = async (auth) => {
                     for (var j = 0; j < cells.length; j++) {
                         if (!/\n/.test(cells[j].innerText)) continue;
                         var rowspan = cells[j].getAttribute('rowspan');
-                        var week = j + a + b;
+                        var week = j + a + b + 1;
                         var parts;
                         if (rowspan === '3') {
                             c ++;
                             d ++;
-                            parts = [i, i + 2];
+                            parts = [i + 1, i + 3];
                         } else if (rowspan === '2') {
                             d ++;
-                            parts = [i, i + 1];
+                            parts = [i + 1, i + 2];
                         } else {
-                            parts = [i, i];
+                            parts = [i + 1, i + 1];
                         }
                         list.push({text: cells[j].innerText, pos: [week, parts]});
                     }
@@ -299,11 +299,18 @@ const getCourseInfo = async (auth) => {
             
             const getMeta = (text, pos) => {
                 const matchs = text.match(/{第(\d+-\d+)周.*}/);
+                const matchs2 = text.match(/第([\d,]+)节/);
+                let parts = pos[1];
+
+                if (matchs2 && matchs2.length && matchs2[1]) {
+                	const arr = matchs2[1].split(',');
+                	parts = [arr[0], arr[arr.length - 1]];
+                }
                 
                 return {
                     week: pos[0],
-                    parts: pos[1],
                     range: matchs[1].split('-'),
+                    parts,
                 };
             };
             const result = list.map(({text, pos}) => {
