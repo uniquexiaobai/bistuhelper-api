@@ -159,7 +159,7 @@ const getBaseInfo = async (auth) => {
                 name: text('#xm'),            // 姓名
                 college: text('#lbl_xy'),     // 学院
                 major: text('#lbl_zymc'),     // 专业
-                class: text('#lbl_dqszj')     // 年级
+                level: text('#lbl_dqszj')     // 年级
             };
         });
 
