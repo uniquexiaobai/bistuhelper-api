@@ -4,7 +4,7 @@ module.exports = {
     script : "app.js",
     watch  : true,
     env: {
-      PORT: 80
+      PORT: 3000
     }
   }]
 }
