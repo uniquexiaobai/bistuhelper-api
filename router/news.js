@@ -29,7 +29,21 @@ router.get('/', (req, res, next) => {
 });
 
 router.get('/hot', (req, res, next) => {
-    fetchHotNews(baseUrl)
+    const url = `${baseUrl}/zhxw/`;
+
+    fetchHotNews(url)
+		.then((data) => {
+			res.json({
+                code: 0,
+                data,
+            });
+		}).catch((err) => {
+			next(err);
+		});
+});
+
+router.get('/slide', (req, res, next) => {
+    fetchSlideNews(baseUrl)
 		.then((data) => {
 			res.json({
                 code: 0,
@@ -76,6 +90,30 @@ const fetchHotNews = async (url) => {
     try {
         const body = await fetch(url);
         const $ = cheerio.load(body);
+        const list = [];
+
+        const $list = $('a', '.table');
+        for (let i = 0; i < $list.length; i ++) {
+            const $item = $list.eq(i);
+            const itemMeta = $item.attr('href').match(/\w+/g);
+
+            itemMeta.pop();
+            itemMeta.unshift('zhxw');
+            list.push({
+                id: itemMeta.join('$'),
+                title: $item.text().trim(),
+            });
+        }
+        return list;
+    } catch (err) {
+        throw err;
+    }
+};
+
+const fetchSlideNews = async (url) => {
+    try {
+        const body = await fetch(url);
+        const $ = cheerio.load(body);
         const slide = [];
 
         const $slide = $('#myCarousel > .carousel-inner').find('.item');
@@ -92,9 +130,9 @@ const fetchHotNews = async (url) => {
         }
        return slide;
     } catch (err) {
-        throw(err);
+        throw err;
     }
-}
+};
 
 const fetchNewsList = async (listUrl, type) => {
 	try {
@@ -175,6 +213,6 @@ const fetchNewsDetail = async (detailUrl) => {
 	} catch (err) {
 		throw err;
 	}
-}
+};
 
 module.exports = router;
