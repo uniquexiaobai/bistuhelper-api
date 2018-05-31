@@ -97,6 +97,29 @@ router.post('/cet', (req, res, next) => {
         });
 });
 
+router.post('/exam', (req, res, next) => {
+    const {username, password} = req.body;
+    const auth = {username, password};
+
+    getExamInfo(auth)
+        .then(data => {
+            res.json({
+                code: 0,
+                data,
+            });
+        })
+        .catch(err => {
+            if (err.message === 'loginError') {
+                res.json({
+                    code: 1,
+                    message: '用户名或密码不正确',
+                });
+            } else {
+                next(err);
+            }
+        });
+});
+
 const pageInit = async (auth) => {
     let browser;
 
@@ -384,6 +407,46 @@ const getCetInfo = async (auth) => {
 
         browser.close();
         return cetInfo;
+    } catch (err) {
+        browser && browser.close && browser.close();
+        throw err;
+    }
+};
+
+const getExamInfo = async (auth) => {
+    let browser;
+
+    try {
+        browser = await pageInit(auth);
+        const pages = await browser.pages();
+        const page = pages.pop();
+
+        const url = await page.evaluate(el => {
+            return document.querySelector(el).href;
+        }, '.nav > li:nth-child(6) > .sub li:nth-child(4) > a')
+        await page.goto(url, {waitUntil: 'domcontentloaded'});
+
+        const examList = await page.evaluate(() => {
+        	const $trs = Array.from(document.querySelectorAll('.datelist tr:not(.datelisthead)'));
+            
+            return $trs.reduce((acc, $tr) => {
+            	const text = $el => ($el.innerText && $el.innerText.trim());
+            	const meta = $tr.children;
+
+            	acc.push({
+            		course: text(meta[1]),
+            		name: text(meta[2]),
+            		date: text(meta[3]),
+            		address: text(meta[4]),
+            		type: text(meta[5]),
+            		seatNo: text(meta[6]),
+            	})
+            	return acc;
+            }, []);
+        });
+
+        browser.close();
+        return examList;
     } catch (err) {
         browser && browser.close && browser.close();
         throw err;
