@@ -98,7 +98,7 @@ const getBaseInfo = async (auth) => {
         browser.close();
         return user;
     } catch (err) {
-        browser && bworser.close && browser.close();
+        browser && browser.close && browser.close();
         throw err;
     }
 };
@@ -136,7 +136,7 @@ const getBorrowInfo = async (auth) => {
         browser.close();
         return books;
     } catch (err) {
-        browser && bworser.close && browser.close();
+        browser && browser.close && browser.close();
         throw err;
     }
 };

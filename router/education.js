@@ -52,10 +52,10 @@ router.post('/score', (req, res, next) => {
 });
 
 router.post('/course', (req, res, next) => {
-    const {username, password} = req.body;
+    const {username, password, schoolYear} = req.body;
     const auth = {username, password};
 
-    getCourseInfo(auth)
+    getCourseInfo(auth, schoolYear)
         .then(data => {
             res.json({
                 code: 0,
@@ -166,7 +166,7 @@ const getBaseInfo = async (auth) => {
         browser.close();
         return baseInfo;
     } catch (err) {
-        browser && bworser.close && browser.close();
+        browser && browser.close && browser.close();
         throw err;
     }
 };
@@ -215,12 +215,12 @@ const getScoreInfo = async (auth) => {
         browser.close();
         return scoreInfo;
     } catch (err) {
-        browser && bworser.close && browser.close();
+        browser && browser.close && browser.close();
         throw err;
     }
 }
 
-const getCourseInfo = async (auth) => {
+const getCourseInfo = async (auth, schoolYear) => {
     let browser;
 
     try {
@@ -233,19 +233,30 @@ const getCourseInfo = async (auth) => {
         }, '.nav > li:nth-child(6) > .sub li:nth-child(3) > a')
         await page.goto(url, {waitUntil: 'domcontentloaded'});
 
-        /* switch year & term
-        await page.evaluate((year, term) => {
-            const $ = (el) => document.querySelector(el);
+        const curSchoolYear = await page.evaluate(() => {
+        	const $ = (el) => document.querySelector(el);
+        	const year = $('#xnd').value;
+        	const term = $('#xqd').value;
 
-            $('#xnd').value = year;
-            $('#xqd').value = term;
-            __doPostBack('xnd', '');
-            __doPostBack('xqd', '');
-        }, query.year, query.term);
-        await page.waitForNavigation({waitUntil: 'domcontentloaded'})
-        */
+            return `${year}#${term}`;
+        });
 
-        const courseInfo = await page.evaluate(() => {
+        // switch year & term
+        if (schoolYear && schoolYear !== curSchoolYear) {
+        	const arr = schoolYear.split('#');
+
+        	await page.evaluate((year, term) => {
+	            const $ = (el) => document.querySelector(el);
+
+	            $('#xnd').value = year;
+	            $('#xqd').value = term;
+	            __doPostBack('xnd', '');
+	            __doPostBack('xqd', '');
+	        }, arr[0], arr[1]);
+	        await page.waitForNavigation({waitUntil: 'domcontentloaded'});
+        }
+
+        const courseList = await page.evaluate(() => {
             const $ = el => document.querySelector(el);
             const $$ = el => document.querySelectorAll(el);
 
@@ -328,9 +339,9 @@ const getCourseInfo = async (auth) => {
         });
 
         browser.close();
-        return courseInfo;
+        return courseList;
     } catch (err) {
-        browser && bworser.close && browser.close();
+        browser && browser.close && browser.close();
         throw err; 
     }
 }
@@ -374,7 +385,7 @@ const getCetInfo = async (auth) => {
         browser.close();
         return cetInfo;
     } catch (err) {
-        browser && bworser.close && browser.close();
+        browser && browser.close && browser.close();
         throw err;
     }
 };
