@@ -23,6 +23,8 @@
     "cheerio": "^1.0.0-rc.2",
     "cors": "^2.8.4",
     "express": "^4.16.3",
+    "jsonwebtoken": "^8.2.2",
+    "leancloud-storage": "^3.7.1",
     "puppeteer": "^1.2.0"
   }
 }
