@@ -22,7 +22,7 @@ router.post('/login', (req, res, next) => {
     login(loginType, auth)
         .then(user => {
             res.json({
-                code: 1,
+                code: 0,
                 data: user,
             });
         })
