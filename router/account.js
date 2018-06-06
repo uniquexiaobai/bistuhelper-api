@@ -50,18 +50,26 @@ const getQQInfo = async ({openid, access_token, oauth_consumer_key}) => {
 
 const login = async (loginType, {openid, access_token, oauth_consumer_key}) => {
     try {
-        const {nickname, gender, figureurl} = await getQQInfo({openid, access_token, oauth_consumer_key});
-        const loggedInUser = await AV.User.loginWithAuthData({
-            openid,
-            access_token,
-        }, loginType);
+        if (loginType === 'qq') {
+            const {nickname, gender, figureurl} = await getQQInfo({openid, access_token, oauth_consumer_key});
+            const loggedInUser = await AV.User.loginWithAuthData({
+                openid,
+                access_token,
+            }, loginType);
 
-        loggedInUser.set('nickname', nickname);
-        loggedInUser.set('gender', gender);
-        loggedInUser.set('figureurl', figureurl);
-        const user = await loggedInUser.save();
-
-        return user;
+            loggedInUser.set('nickname', nickname);
+            loggedInUser.set('gender', gender);
+            loggedInUser.set('figureurl', figureurl);
+            const user = await loggedInUser.save();
+            return user;
+        } else if (loginType === 'weibo') {
+            const loggedInUser = await AV.User.loginWithAuthData({
+                uid: openid,
+                access_token,
+            }, loginType);
+            return loggedInUser;
+        }
+        throw new Error('loginType is illegal');
     } catch (err) {
         throw err;
     }
