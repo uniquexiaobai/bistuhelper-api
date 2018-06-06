@@ -1,6 +1,24 @@
 const puppeteer = require('puppeteer');
+const AipOcrClient = require("baidu-aip-sdk").ocr;
 const express = require('express');
 const router = express.Router();
+
+const baiduOcr = require('../conf.json').baiduOcr;
+
+const ocrClient = new AipOcrClient(baiduOcr.APP_ID, baiduOcr.API_KEY, baiduOcr.SECRET_KEY);
+
+// 验证码识别
+const imageToText = async (base64) => {
+    try {
+        const result = await ocrClient.generalBasic(base64);
+
+        if (result.words_result && result.words_result[0] && result.words_result[0].words) {
+            return result.words_result[0].words;
+        }
+    } catch (err) {
+        throw err;
+    }
+};
 
 router.post('/base', (req, res, next) => {
     const {username, password} = req.body;
@@ -54,19 +72,32 @@ const pageInit = async (auth) => {
         });
         const page = await browser.newPage();
     
-        await page.goto('http://m.5read.com/163', {waitUntil: 'domcontentloaded'}); 
-    
-        await page.goto('http://mc.m.5read.com/user/login/showLogin.jspx?backurl=%2Fuser%2Fuc%2FshowOpacinfo.jspx', {waitUntil: 'domcontentloaded'});
-        await page.type('#username', auth.username);
-        await page.type('#password', auth.password);
+        await page.goto('http://opac-lib.bistu.edu.cn:8080/reader/login.php', {waitUntil: 'domcontentloaded'});
+        
+        // 验证码
+        const base64 = await page.evaluate(() => {
+            const img = document.querySelector('img');
+            const convas = document.createElement('canvas');
 
+            convas.width = 60;
+            convas.height = 36;
+            convas.getContext('2d').drawImage(img, 0, 0, 60, 36);
+
+            const base64 = convas.toDataURL().slice(22);
+            return base64;
+        });
+        const text = await imageToText(base64);
+
+        await page.type('#number', auth.username);
+        await page.type('input[name=passwd]', auth.password);
+        await page.type('#captcha', text);
         await Promise.all([
             page.click('input[type=submit]'),
             page.waitForNavigation({waitUntil: 'domcontentloaded'}),
         ]);
 
         const url = await page.url();
-		if (url.includes('irdUser')) {
+		if (!url.includes('redr_info')) {
             throw new Error('loginError');
         }
     
@@ -85,14 +116,11 @@ const getBaseInfo = async (auth) => {
         const pages = await browser.pages();
         const page = pages.pop();
 
-        await page.goto('http://mc.m.5read.com/irdUser/edit/showEditUser.jspx', {waitUntil: 'domcontentloaded'});
         const user = await page.evaluate(() => {
-            const trim = (str = '') => str.trim();
-            const value = (el) => trim((document.querySelector(el) || {}).value);
-            const name = value('#displayname');
-            const department = value('#department');
+            const $name = document.querySelector('.profile-name');
+            const name = $name.textContent.trim();
 
-            return {name, department};
+            return {name};
         });
 
         browser.close();
@@ -111,27 +139,24 @@ const getBorrowInfo = async (auth) => {
         const pages = await browser.pages();
         const page = pages.pop();
 
-        await Promise.all([
-            page.click('.set > li > a'),
-            page.waitForNavigation({waitUntil: 'domcontentloaded'}),
-        ]);
+        await page.goto('http://opac-lib.bistu.edu.cn:8080/reader/book_lst.php', {waitUntil: 'domcontentloaded'});
 
-        const books = await page.evaluate(el => {
-            const $$ = (el, $target) => ($target || document).querySelectorAll(el);
-            const text = ($el) => $el.textContent.trim();
+        const books = await page.evaluate(() => {
+            const text = $el => ($el.textContent || '').trim();
+            const $trs = [].slice.call(document.querySelectorAll('.table_line tr'), 1);
 
-            const $list = [...$$(el)];
-            return $list.map(($item) => {
-                const name = $item.querySelector('.sheetHd').textContent.trim();
-                const $infos = $$('.sheet > table:nth-child(2) tr > td', $item);
-                const barCode = text($infos[0]);
-                const fromDate = text($infos[1]);
-                const toDate = text($infos[2]);
-                const address = text($infos[3]);
-
-                return {name, barCode, fromDate, toDate, address};
+            const list = $trs.map($tr => {
+                const $tds = $tr.children;
+                return {
+                    'barCode': text($tds[0]),
+                    'name': text($tds[1]),
+                    'fromDate': text($tds[2]),
+                    'toDate': text($tds[3]),
+                    'address': text($tds[5]),
+                };
             });
-        }, '.sheet');
+            return list;
+        });
 
         browser.close();
         return books;
