@@ -26,6 +26,7 @@
     "express": "^4.16.3",
     "jsonwebtoken": "^8.2.2",
     "leancloud-storage": "^3.7.1",
-    "puppeteer": "^1.2.0"
+    "puppeteer": "^1.2.0",
+    "winston": "^3.0.0-rc6"
   }
 }
