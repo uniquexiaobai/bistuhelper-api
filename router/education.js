@@ -98,10 +98,10 @@ router.post('/cet', (req, res, next) => {
 });
 
 router.post('/exam', (req, res, next) => {
-    const {username, password} = req.body;
+    const {username, password, schoolYear} = req.body;
     const auth = {username, password};
 
-    getExamInfo(auth)
+    getExamInfo(auth, schoolYear)
         .then(data => {
             res.json({
                 code: 0,
@@ -204,7 +204,7 @@ const getScoreInfo = async (auth) => {
 
         const url = await page.evaluate(el => {
             return document.querySelector(el).href;
-        }, '.nav > li:nth-child(6) > .sub li:nth-child(10) > a')
+        }, '.nav > li:nth-child(6) > .sub li:nth-child(8) > a')
         await page.goto(url, {waitUntil: 'domcontentloaded'});
 
         await Promise.all([
@@ -253,7 +253,7 @@ const getCourseInfo = async (auth, schoolYear) => {
 
         const url = await page.evaluate(el => {
             return document.querySelector(el).href;
-        }, '.nav > li:nth-child(6) > .sub li:nth-child(3) > a')
+        }, '.nav > li:nth-child(6) > .sub li:nth-child(1) > a')
         await page.goto(url, {waitUntil: 'domcontentloaded'});
 
         const curSchoolYear = await page.evaluate(() => {
@@ -413,7 +413,7 @@ const getCetInfo = async (auth) => {
     }
 };
 
-const getExamInfo = async (auth) => {
+const getExamInfo = async (auth, schoolYear) => {
     let browser;
 
     try {
@@ -423,8 +423,19 @@ const getExamInfo = async (auth) => {
 
         const url = await page.evaluate(el => {
             return document.querySelector(el).href;
-        }, '.nav > li:nth-child(6) > .sub li:nth-child(4) > a')
+        }, '.nav > li:nth-child(6) > .sub li:nth-child(2) > a')
         await page.goto(url, {waitUntil: 'domcontentloaded'});
+
+        const schoolYearArr = schoolYear.split('#');
+        await page.evaluate((year, term) => {
+            const $ = (el) => document.querySelector(el);
+
+            $('#xnd').value = year;
+            $('#xqd').value = term;
+            __doPostBack('xnd', '');
+            __doPostBack('xqd', '');
+        }, schoolYearArr[0], schoolYearArr[1]);
+        await page.waitForNavigation({waitUntil: 'domcontentloaded'});
 
         const examList = await page.evaluate(() => {
         	const $trs = Array.from(document.querySelectorAll('.datelist tr:not(.datelisthead)'));
